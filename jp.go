@@ -14,6 +14,7 @@ var (
 	Compile     = api.Compile
 	MustCompile = api.MustCompile
 	Search      = api.Search
+	SearchWithParams = api.SearchWithParams
 )
 
 // parsing types
