@@ -3,6 +3,7 @@ package api
 import (
 	"strconv"
 
+	"github.com/jmespath-community/go-jmespath/pkg/binding"
 	"github.com/jmespath-community/go-jmespath/pkg/functions"
 	"github.com/jmespath-community/go-jmespath/pkg/interpreter"
 	"github.com/jmespath-community/go-jmespath/pkg/parsing"
@@ -12,6 +13,7 @@ import (
 // safe for concurrent use by multiple goroutines.
 type JMESPath interface {
 	Search(interface{}) (interface{}, error)
+	SearchWithParams(interface{}, map[string]interface{}) (interface{}, error)
 }
 
 type jmesPath struct {
@@ -53,15 +55,27 @@ func MustCompile(expression string, funcs ...functions.FunctionEntry) JMESPath {
 
 // Search evaluates a JMESPath expression against input data and returns the result.
 func (jp jmesPath) Search(data interface{}) (interface{}, error) {
-	intr := interpreter.NewInterpreter(data, jp.caller, nil)
+	return jp.SearchWithParams(data, make(map[string]interface{}))
+}
+func (jp jmesPath) SearchWithParams(data interface{}, params map[string]interface{}) (interface{}, error) {
+	bindings := binding.NewBindings()
+	if params != nil {
+		for key, val := range params {
+			bindings = bindings.Register("$" + key, binding.NewBinding(val))
+		}
+	}
+	intr := interpreter.NewInterpreter(data, jp.caller, bindings)
 	return intr.Execute(jp.node, data)
 }
 
 // Search evaluates a JMESPath expression against input data and returns the result.
 func Search(expression string, data interface{}, funcs ...functions.FunctionEntry) (interface{}, error) {
+	return SearchWithParams(expression, data, make(map[string]interface{}), funcs...)
+}
+func SearchWithParams(expression string, data interface{}, params map[string]interface{}, funcs ...functions.FunctionEntry) (interface{}, error) {
 	compiled, err := Compile(expression, funcs...)
 	if err != nil {
 		return nil, err
 	}
-	return compiled.Search(data)
+	return compiled.SearchWithParams(data, params)
 }

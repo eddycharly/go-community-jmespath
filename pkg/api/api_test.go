@@ -48,6 +48,19 @@ func jpfEcho(arguments []interface{}) (interface{}, error) {
 	return arguments[0], nil
 }
 
+func TestSearchWithParams(t *testing.T) {
+
+	expression := "let $answer = $number in $answer"
+	params := map[string]interface{}{ "number": 42.0 }
+	want := 42.0
+
+	assert := assert.New(t)
+	got, err := SearchWithParams(expression, nil, params)
+
+	assert.Nil(err)
+	assert.Equal(want, got)
+}
+
 func TestSearch(t *testing.T) {
 	type args struct {
 		expression string
